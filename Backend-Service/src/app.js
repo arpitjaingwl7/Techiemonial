@@ -1,4 +1,5 @@
-const express= require("express")
+const express= require("express");
+const { isUserValid } = require("./middleware/auth.middleware");
 
 const app=express();
 
@@ -25,20 +26,20 @@ const app=express();
 //     res.send("hello")
 // }
 // )
-app.get(/^\/abcc?$/, (req, res) => {
-  res.send("This will match /abc and /abcc");
-});
+// app.get(/^\/abcc?$/, (req, res) => {
+//   res.send("This will match /abc and /abcc");
+// });
 
 
 
-app.get("/user",(req,res)=>{
+// app.get("/user",(req,res)=>{
 
     
-      res.send(req.query?.name)})
+      // res.send(req.query?.name)})
 // dynamic route
-app.get("/user/:id",(req,res)=>{
-   res.send({id:req.params.id})
-})
+// app.get("/user/:id",(req,res)=>{
+//    res.send({id:req.params.id})
+// })
 
 // 
 // app.get("/user",(req,res)=>{
@@ -46,7 +47,21 @@ app.get("/user/:id",(req,res)=>{
 // })
 
 
+app.get("/user/login",(req,res)=>{
+  throw new Error("custom error")
+  // res.send("login page")
+})
 
+app.use("/user",isUserValid,(req,res)=>{
+  //  res.send("User is valid")
+  throw new Error("custom error")
+})
+
+app.use("/",(err,req,res,next)=>{
+   if(err){
+    res.status(500).send("something went wrong in app")
+   }
+})
 
 
 
