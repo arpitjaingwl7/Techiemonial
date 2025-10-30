@@ -27,7 +27,10 @@ dbConnect().then(()=>{
 
 // api for signup
 app.get("/user/sighnup",async (req,res)=>{
-
+// changed
+const a=5;
+const b=45;
+console.log(b)
 try {
      
         const newUser={
