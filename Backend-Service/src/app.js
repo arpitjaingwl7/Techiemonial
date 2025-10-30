@@ -1,71 +1,52 @@
 const express= require("express");
 const { isUserValid } = require("./middleware/auth.middleware");
-
+const dbConnect=require("./config/database.js")
 const app=express();
+const {User}=require("./models/user.js")
+
+
+dbConnect().then(()=>{
+    console.log("Database connected Succesfuly")}
+)
 
 
 
-
-// app.get("/a",(req, res)=>{
-//     res.send("this is  homepage")
-// })
-
-
-
-// app.get("/a/bcd",(req, res)=>{
-//     res.send("this is  455")
-// })
-// app.use("/",(req,res)=>{
-    
-//     res.send("Workin fine")
-
-
-// })
-
-// app.get("/a+",(req,res)=>{
-//     res.send("hello")
-// }
-// )
-// app.get(/^\/abcc?$/, (req, res) => {
-//   res.send("This will match /abc and /abcc");
-// });
-
-
-
-// app.get("/user",(req,res)=>{
-
-    
-      // res.send(req.query?.name)})
-// dynamic route
-// app.get("/user/:id",(req,res)=>{
-//    res.send({id:req.params.id})
-// })
-
-// 
-// app.get("/user",(req,res)=>{
-//    res.send()
-// })
-
-
-app.get("/user/login",(req,res)=>{
-  throw new Error("custom error")
-  // res.send("login page")
-})
-
-app.use("/user",isUserValid,(req,res)=>{
-  //  res.send("User is valid")
-  throw new Error("custom error")
-})
-
-app.use("/",(err,req,res,next)=>{
-   if(err){
-    res.status(500).send("something went wrong in app")
-   }
-})
-
-
-
-app.listen(7777,()=>{
+.then(()=>{
+    app.listen(7777,()=>{
     console.log("Server running on 7777")
 })
+})
 
+.catch((err)=>{
+   console.error(err)
+})
+
+
+
+
+
+// api for signup
+app.get("/user/sighnup",async (req,res)=>{
+
+try {
+     
+        const newUser={
+            name:"Shubham1",
+            email:"a@gma112il.11com",
+            password:"12345"
+        }
+        
+        const user=new User(newUser);
+      
+    
+       const prom=await user.save()
+    
+     
+        res.status(201).send(user);
+    
+} catch (error) {
+    res.status(501).send(error)
+}
+
+
+})

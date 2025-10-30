@@ -25,3 +25,20 @@
 -Error Hander using app.use towards the end
 
 
+
+29oct2025
+Create MongoDB cluster
+create database
+connect application with DB
+create config folder
+    -create database file for connection
+    -install mongoose 
+call connectDb function and connect db before starting the service
+
+create a user Schema and model
+create  Post /sighnup API to add data to DB
+-push some documents using API Calls
+Allways add try Catch while dealing with DB
+
+
+30 oct 2025
