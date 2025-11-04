@@ -42,3 +42,29 @@ Allways add try Catch while dealing with DB
 
 
 30 oct 2025
+
+JS object vs JSON (difference)
+
+Add the express.json middleware to your app
+
+Make your signup API dynamic to recive data from the end user
+
+User.findOne with duplucate email ids, which object returned - 1st object that we created with same email id will be return 
+
+API- Get user by email 
+
+API- Feed API GET /feed get all the users from the database
+
+API Get user by ID 
+
+Create a delete user API
+
+Difference between PATCH and PUT
+
+API- Update a user
+
+** Explore the Mongoose Documention for Model methods
+
+What are options in a Model.findOneAndUpdate method, explore more about it
+
+API Update the user with email ID
