@@ -1,9 +1,12 @@
 const express= require("express");
 const { isUserValid } = require("./middleware/auth.middleware");
 const dbConnect=require("./config/database.js")
-const app=express();
 const {User}=require("./models/user.js")
 
+const app=express();
+
+
+app.use(express.json())
 
 dbConnect().then(()=>{
     console.log("Database connected Succesfuly")}
@@ -26,24 +29,15 @@ dbConnect().then(()=>{
 
 
 // api for signup
-app.get("/user/sighnup",async (req,res)=>{
-// changed
-const a=5;
-const b=45;
-console.log(b)
+app.post("/user/signup",async (req,res)=>{
+
 try {
-     
-        const newUser={
-            name:"Shubham1",
-            email:"a@gma112il.11com",
-            password:"12345"
-        }
+        
+        const newUser=req.body
         
         const user=new User(newUser);
       
-    
-       const prom=await user.save()
-    
+        await user.save()
      
         res.status(201).send(user);
     
@@ -52,4 +46,80 @@ try {
 }
 
 
+
 })
+
+// api for login
+app.post("/user/getInfoByEmail",async (req,res)=>{
+
+try {
+        
+    const {email}=req.body
+
+        const user = await User.findOne({email})
+
+        
+        res.status(201).send(user);
+    
+} catch (error) {
+    res.status(501).send(error)
+}
+
+
+})
+
+// api for getting user info
+app.get("/user/:id",async (req,res)=>{
+
+try {
+        const userId = req.params.id
+
+        const user = await User.findById(userId)
+
+        if(!user){
+            res.status(404).send("User not found");
+        }
+        res.status(201).send(user);
+    
+} catch (error) {
+    res.status(501).send(error)
+}
+
+
+})
+
+// api for deleting user
+app.delete("/user/:id",async (req,res)=>{
+
+try {
+        
+        const userId = req.params.id
+        const user = await User.findByIdAndDelete(userId)
+
+        res.status(201).send("User Deleted Successfully");
+    
+} catch (error) {
+    res.status(501).send(error)
+}
+
+
+})
+
+// api for updating user
+app.patch("/user/update", async (req, res) => {
+  try {
+    const { email, ...newUser } = req.body;
+
+    const user = await User.findOneAndUpdate(
+      { email },       // filter
+      newUser,         // updated data
+      { new: true }    // return updated doc (optional)
+    );
+
+    if (!user) return res.status(404).send("User not found");
+
+    res.status(200).send("User Updated Successfully");
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
