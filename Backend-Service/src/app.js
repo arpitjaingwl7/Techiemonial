@@ -3,9 +3,11 @@ const { isUserValid } = require("./middleware/auth.middleware");
 const dbConnect=require("./config/database.js")
 const {User}=require("./models/user.js")
 
+const {userValidator}=require("./utils/userValidator.js")
+
 const app=express();
 
-
+const validator=require("validator")
 app.use(express.json())
 
 dbConnect().then(()=>{
@@ -31,7 +33,45 @@ dbConnect().then(()=>{
 // api for signup
 app.post("/user/signup",async (req,res)=>{
 
+// Data validation and sanitization
+
+
+
+
+
+
+
+// Password Encryption
+
+// save to DB
+
+
+
 try {
+    
+    const {email, password, firstName, lastName,photoUrl}=req.body;
+
+    if(!email || !password || !firstName || !lastName){
+        throw new Error("Missing Required Fields")
+    }
+
+    const dbUser=await User.findOne({email});
+    if(dbUser!=undefined){
+        throw new Error("User already exist!!")
+    }
+
+    userValidator(req);
+
+     
+    // if(!validator.isURL(photoUrl)){
+    //    throw new Error("not a URL")
+    // }
+
+
+
+
+
+
         
         const newUser=req.body
         
@@ -42,14 +82,14 @@ try {
         res.status(201).send(user);
     
 } catch (error) {
-    res.status(501).send(error)
+    res.status(501).send("error :"+error)
 }
 
 
 
 })
 
-// api for login
+
 app.post("/user/getInfoByEmail",async (req,res)=>{
 
 try {
