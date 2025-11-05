@@ -2,6 +2,7 @@ const express= require("express");
 const { isUserValid } = require("./middleware/auth.middleware");
 const dbConnect=require("./config/database.js")
 const {User}=require("./models/user.js")
+const bcrypt = require("bcryptjs");
 
 const {userValidator}=require("./utils/userValidator.js")
 
@@ -34,15 +35,7 @@ dbConnect().then(()=>{
 app.post("/user/signup",async (req,res)=>{
 
 // Data validation and sanitization
-
-
-
-
-
-
-
 // Password Encryption
-
 // save to DB
 
 
@@ -66,16 +59,16 @@ try {
     // if(!validator.isURL(photoUrl)){
     //    throw new Error("not a URL")
     // }
-
-
-
-
-
-
         
-        const newUser=req.body
-        
-        const user=new User(newUser);
+    
+        const encryptedPassword = await bcrypt.hash(password, 10);
+        const user=new User({
+            email,
+            password:encryptedPassword,
+            firstName,
+            lastName,
+            photoUrl
+        });
       
         await user.save()
      
@@ -86,6 +79,35 @@ try {
 }
 
 
+
+})
+
+app.post("/user/login",async(req,res)=>{
+
+    try {
+        
+        const {email,password} = req.body;
+
+        const user = await User.findOne({email})
+
+        if(!user){
+            throw new Error("please signup first")
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password,user.password)
+        
+        if(!isPasswordCorrect){
+            throw new Error("Invalid Credentials")
+        }
+
+        res.status(201).send("Login successfully")
+
+
+
+
+    } catch (error) {
+        res.status(501).send("error :"+error)
+    }
 
 })
 
