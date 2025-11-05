@@ -67,4 +67,34 @@ API- Update a user
 
 What are options in a Model.findOneAndUpdate method, explore more about it
 
-API Update the user with email ID
+API Update the user with email 
+
+
+4/nov/2025
+Video-8
+
+-explore schema types options from the documentation
+-add required , unique , lowercase , min , minlength , trim , default
+-add default
+-create a custom validation function for gender
+-improve the DB schema- Put all appropriate validations on each field in Schema
+- add timestamps to the userSchema
+- Add api level validation on patch request and sighnup post api
+-Data Sanitization-Add Api validation for each fields in schema
+-**NOT DONE max 20skills can be add for user
+-**NOT DONE email id can  not be update
+- Install validator 
+Use validator function for passwords ,email , photourl  and explore validator library function
+
+--Never trust req.body/badie
+
+5/nov/2025
+Video -9
+Encryption Password
+
+Validate data in sighnup api
+Install bcrypt
+Create a password using bcrypt.hash
+Save the user with password hash
+Create login api
+Compare password and trow errors if email or password is invalid 
