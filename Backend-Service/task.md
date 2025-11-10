@@ -98,3 +98,22 @@ Create a password using bcrypt.hash
 Save the user with password hash
 Create login api
 Compare password and trow errors if email or password is invalid 
+
+
+
+10/nov/2025
+Video - 10
+JWT  - authentication and cookies
+
+
+- Install cookie parser
+- just send a dummy cookie to user
+- create GET/profile API and check if you get the cookie back
+- install jsonwebtoken
+- In login API , After email and password validation create a jwt token and send it to user
+- read the cookies inside your profile API and find the logged in user
+- userAuth Middleware
+- add the userAuth middleware in profile API and send a new sendConnectionRequest Api
+- set the expiry of JWT tokena and cookies to 7 days
+- create userSchema method to getJWT()
+- create userSChema method to comparePassword(passwordInput)
