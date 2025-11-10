@@ -17,7 +17,8 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
         unique:true,
-        trim:true
+        trim:true,
+        lowercase:true, 
     },
     password: {
         type: String,
@@ -53,6 +54,10 @@ const userSchema = mongoose.Schema({
     ,
     skills:{
         type:[String]
+    },
+    about:{
+        type:String,
+        default:"this is default msg"
     }
 
 },{timestamps:true})
