@@ -2,19 +2,17 @@ const express= require("express");
 const { isUserValid } = require("./middleware/auth.middleware");
 const dbConnect=require("./config/database.js")
 const {User}=require("./models/user.js")
-const bcrypt = require("bcryptjs");
-// var cookieParser = require('cookie-parser')
 const cookieParser = require("cookie-parser");
-const {userValidator}=require("./utils/userValidator.js")
 
 const app=express();
 
-const validator=require("validator")
+const validator=require("validator");
+const { authRouter } = require("./routes/authRoutes.js");
+const { profileRouter } = require("./routes/profileRoutes.js");
+
+
 app.use(express.json())
-
-
-app.use(cookieParser());
-
+app.use(cookieParser())
 
 dbConnect().then(()=>{
     console.log("Database connected Succesfuly")}
@@ -33,126 +31,8 @@ dbConnect().then(()=>{
 })
 
 
-
-
-
-// api for signup
-app.post("/user/signup",async (req,res)=>{
-
-// Data validation and sanitization
-// Password Encryption
-// save to DB
-
-
-
-try {
-    
-    const {email, password, firstName, lastName,photoUrl}=req.body;
-
-    if(!email || !password || !firstName || !lastName){
-        throw new Error("Missing Required Fields")
-    }
-
-    const dbUser=await User.findOne({email});
-    if(dbUser!=undefined){
-        throw new Error("User already exist!!")
-    }
-
-    userValidator(req);
-
-     
-    // if(!validator.isURL(photoUrl)){
-    //    throw new Error("not a URL")
-    // }
-        
-    
-        const encryptedPassword = await bcrypt.hash(password,10);
-        const user=new User({
-            email,
-            password:encryptedPassword,
-            firstName,
-            lastName,
-            photoUrl
-        });
-      
-        await user.save()
-        // res.cookie("dummy","hadwdjaewfnaekjf");
-     
-        res.status(201).send(user);
-    
-} catch (error) {
-    res.status(501).send("error :"+error)
-}
-
-
-
-})
-
-
-
-
-app.post("/user/login",async(req,res)=>{
-
-    try {
-        
-        const {email,password} = req.body;
-
-        const user = await User.findOne({email})
-
-        if(!user){
-            throw new Error("please signup first")
-        }
-
-        const isPasswordCorrect = await user.isPasswordValid(password)
-        if(!isPasswordCorrect){
-            throw new Error("Invalid Credentials")
-        }
-
-
-        const token= await user.getjwt()
-
-        console.log(token)
-
-        res.cookie("token", token, {
-  httpOnly: true,
-  secure: false, // true in production (with HTTPS)
-  sameSite: "lax",
-  expires:new Date(Date.now()+1000000000)
-});
-
-        res.status(201).send("Login successfully")
-
-
-
-
-    } catch (error) {
-        res.status(501).send("error :"+error)
-    }
-
-})
-
-
-
-
-
-
-// get user Profile
-app.get("/user/profile", isUserValid ,async(req,res)=>{
-   
-
-    const user=req.user
-
-    try {
-   
-        res.send(user)
-
-        
-    } catch (error) {
-        res.status(501).send("error :"+error)
-    }
-})
-
-
+app.use(authRouter)
+app.use(profileRouter)
 
 app.post("/user/getInfoByEmail",async (req,res)=>{
 
