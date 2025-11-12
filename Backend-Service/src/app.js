@@ -88,22 +88,6 @@ try {
 
 })
 
-// get user Profile
-app.get("/user/profile", isUserValid ,async(req,res)=>{
-   
-
-    const user=req.user
-
-    try {
-   
-        res.send(user)
-
-        
-    } catch (error) {
-        res.status(501).send("error :"+error)
-    }
-})
-
 
 
 
@@ -125,12 +109,15 @@ app.post("/user/login",async(req,res)=>{
         }
 
 
-        const token=user.getjwt()
+        const token= await user.getjwt()
+
+        console.log(token)
 
         res.cookie("token", token, {
   httpOnly: true,
   secure: false, // true in production (with HTTPS)
-  sameSite: "lax"
+  sameSite: "lax",
+  expires:new Date(Date.now()+1000000000)
 });
 
         res.status(201).send("Login successfully")
@@ -143,6 +130,28 @@ app.post("/user/login",async(req,res)=>{
     }
 
 })
+
+
+
+
+
+
+// get user Profile
+app.get("/user/profile", isUserValid ,async(req,res)=>{
+   
+
+    const user=req.user
+
+    try {
+   
+        res.send(user)
+
+        
+    } catch (error) {
+        res.status(501).send("error :"+error)
+    }
+})
+
 
 
 app.post("/user/getInfoByEmail",async (req,res)=>{

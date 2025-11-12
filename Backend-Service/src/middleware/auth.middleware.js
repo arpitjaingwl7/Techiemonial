@@ -2,7 +2,7 @@
 
 const jwt=require("jsonwebtoken")
 
-const User =require("../models/user")
+const {User} =require("../models/user")
 const cookieParser = require("cookie-parser");
 // app.use(cookieParser());
 
