@@ -128,6 +128,7 @@ Video-11 Building more APIs
 -group multiple routes under respective routers 
 -Read documentation for express.router
 -create routes folder for managing auth, profile, request routers
+
 -create authRouter , profileRouter , requestRouter
 -import these routers in app.js
 -create post/logout api
