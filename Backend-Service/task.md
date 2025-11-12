@@ -98,3 +98,39 @@ Create a password using bcrypt.hash
 Save the user with password hash
 Create login api
 Compare password and trow errors if email or password is invalid 
+
+
+
+10/nov/2025
+Video - 10
+JWT  - authentication and cookies
+
+
+- Install cookie parser
+- just send a dummy cookie to user
+- create GET/profile API and check if you get the cookie back
+- install jsonwebtoken
+- In login API , After email and password validation create a jwt token and send it to user
+- read the cookies inside your profile API and find the logged in user
+- userAuth Middleware
+- add the userAuth middleware in profile API and send a new sendConnectionRequest Api
+- set the expiry of JWT tokena and cookies to 7 days
+- create userSchema method to getJWT()
+- create userSChema method to comparePassword(passwordInput)
+
+
+
+11 Nov 2025
+Video-11 Building more APIs
+
+-Explore Tinder API
+-create a list of all api you can think of in tinder 
+-group multiple routes under respective routers 
+-Read documentation for express.router
+-create routes folder for managing auth, profile, request routers
+-create authRouter , profileRouter , requestRouter
+-import these routers in app.js
+-create post/logout api
+-create Patch /profile/edit
+-create Patch /profile/password api ->(forgot pass api)
+-make sure you validatte all data in every post /patch api
