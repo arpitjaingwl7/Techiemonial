@@ -17,9 +17,7 @@ const isUserValid = async(req,res,next)=>{
         if(!token){
             throw new Error("please Login First")
         }
-
-
-console.log(token)       
+      
    const payload = jwt.verify(token, "user@123");
         
         // 3. Fix: Use the '_id' from the payload to find the user.

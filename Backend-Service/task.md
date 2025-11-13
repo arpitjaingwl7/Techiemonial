@@ -92,7 +92,7 @@ Use validator function for passwords ,email , photourl  and explore validator li
 Video -9
 Encryption Password
 
-Validate data in sighnup api
+Validate data in signup api
 Install bcrypt
 Create a password using bcrypt.hash
 Save the user with password hash
@@ -100,6 +100,9 @@ Create login api
 Compare password and trow errors if email or password is invalid 
 
 
+6/nov/2025
+Video - 10
+JWT  - authentication and cookies
 
 10/nov/2025
 Video - 10
@@ -135,3 +138,4 @@ Video-11 Building more APIs
 -create Patch /profile/edit
 -create Patch /profile/password api ->(forgot pass api)
 -make sure you validatte all data in every post /patch api
+-add OTP functionality in signup and forget password
