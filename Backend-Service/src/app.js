@@ -9,6 +9,7 @@ const app=express();
 const validator=require("validator");
 const { authRouter } = require("./routes/authRoutes.js");
 const { profileRouter } = require("./routes/profileRoutes.js");
+const {connectionRouter}=require("./routes/connectionRoutes.js")
 
 
 app.use(express.json())
@@ -33,6 +34,7 @@ dbConnect().then(()=>{
 
 app.use(authRouter)
 app.use(profileRouter)
+app.use(connectionRouter)
 
 app.post("/user/getInfoByEmail",async (req,res)=>{
 
