@@ -139,3 +139,115 @@ Video-11 Building more APIs
 -create Patch /profile/password api ->(forgot pass api)
 -make sure you validatte all data in every post /patch api
 -add OTP functionality in signup and forget password
+
+
+
+13 Nov 2025
+Logical DB Query and compound indexes
+
+#Connection Request
+Create a connection request Model
+       -fromUserId{
+      type: mongoose.Schema.Types.ObjectId
+        Ref????
+
+//create connectionrequest api
+// finding object with or condition from mongodb
+
+existingRequest= await ConnectionRequest.findOne({
+$or[{fromUserId,toUserId},
+{fromUserId:toUserId,toUserId:fromUserId}]
+})
+
+// handle all the edge cases for connection request
+->cant send connection req to self
+-> cant send 2nd time connection req
+->receiver cant again send connection req
+->status of connection req should be either ignored or intersed
+-> we cant use arrow functions for schema methods and schema pre function
+-> Use schema pre Function and always call next in the end of pre function in schema
+->>> connectionRequest.pre(“save”,function(next){
+Const conReq=this;
+if(conReq.fromUser.equals(conReq.toUser)){
+ Throw new Error(“can not send connection request to yourself”)
+}
+})
+
+
+## indexing in database
+If u are making any field unique
+It will automatically make the field index
+So for making a field indexed you can either write 
+Unique: true or index:true
+
+-Create connection req Schema
+-Send connection Req Api
+-Proper validation
+-Think about all the corner cases
+-Read about $or query and $and query
+-schema.pre(“save”) function
+-always think about all corner cases
+
+#compound indexing
+Read article about compound indexing
+
+
+
+Read more about indexes in mongodb
+Why do we need index in db
+What is the advantage and disadvantages of indexes
+Read the article about compound indexes of mongodb
+
+
+
+Nov -14
+Video-13
+Ref Poppulate Diving into APIs
+
+
+#Review Connection->Accepting and rejecting connection Api
+/request/review/:status/:connectionId
+
+////checks ->
+    Validate status
+    toUser of  connectionId must be the same logined user
+    Status of request must be interested
+
+Write code with proper validation for Post- /request/review/:status/:requestId
+
+
+-Write  Api for userRouter
+-Write Api get user/request/recieved with all the checks
+
+### Use of ref in Schema
+### populate
+
+Const connectionRequest=await ConnectionRequest({toUserId:req.user._id,status:”interested”}).populate(“fromUserid”,[firstName,lastName])
+
+
+-write api to get connection-> get  /user/connection
+
+Const user_safe = “firstName lastName age gender about designation”
+
+Const connections= await  ConnectionRequest.find({
+$or:[{
+     toUserId:loggedInUserId,
+     status:”accepted”
+},{
+
+    fromUserId:loggedInUserId,
+    status:”accepted”
+
+}]
+
+}).populate({“fromUserId”,user_safe}).populate({“toUserId”,user_safe})
+
+Const data = connections.map((row) => {
+
+if(loggedInUser._Id.equals(fromUserId){
+            return toUserId
+}
+	return row.fromUserId
+
+})
+
