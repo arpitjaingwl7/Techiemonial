@@ -251,3 +251,113 @@ if(loggedInUser._Id.equals(fromUserId){
 
 })
 
+
+
+
+
+
+
+
+Day 14 Nov 25
+
+Building feed Api / Pagination
+
+userRoute.get(“/feed”) building this api 
+
+
+User should not see card of all the profile who already accepted/ignored/rejected connection request
+User should not see card of himself 
+
+Approach
+
+Get -> /user/feed
+
+loggedInUser
+
+connctionRequest.find({
+	
+$or:[
+
+{
+	fromUserId : loggedInUser._id
+
+},
+
+{
+	toUserId : loggedInUser._id
+
+}
+]
+
+
+})
+
+
+
+connectionRequest.map((cr)=>{
+set.add(cr.fromUserId)
+set.add(cr.toUserId)
+)
+
+
+User.find({})
+
+
+
+first we will find all the connection request which we have sent or recieved then will use a set to get all the user with whom we have a connection then we will filter out all these users from all user to get our feed users
+
+.select("fromUserID, toUSerID")  it is used to get particular entity from the data
+
+.populate("fromUserID, “fristName”")
+.populate("toUserID, “firstName”")
+
+
+const hideUserFromFeed = new Set()
+connectionreq.forEach((req)=>{
+hideUserFromFeed.add(req.fromUserID.toString())
+hideUserFromFeed.add(req.toUserID.toString())
+
+consoel.log(hideUserFromFeed)
+res.send(connectionReq)
+})
+
+Const user = await user.find({
+	
+$and:[
+
+	{	_id:{$nin: Array.from(hideUserFromFeed)}   },
+//here we are not including user which have connections with loggedInUser
+
+
+	{_id:{$ne: loggedInUser._id}   }
+
+]
+}).select(safe_user_data)
+
+
+
+Homework ➕
+
+logic for get/feed api
+explore the $nin $and $ne and other queries operators
+
+
+Pagination concept::
+
+page:1 && limit:10 and .skip(0).limit(10)
+
+skip(5) means skips five entries
+limit(10) means it will give only 10 enteries
+
+To know about page no : skip +1 to limit*page -> means 1 to 10
+
+For page 2 && limit:30 -> skip(30).limit(30) means 31 to 60
+
+const page = parseInt(req.query.page) || 1
+const limit = parseInt(req.query.limit) || 10
+
+skip = (page-1)*limit  => this is a formula for skipping the pages
+
+
+Validate the limits and 
+Limit = limit>50?50:limit
