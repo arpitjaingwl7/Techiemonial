@@ -3,6 +3,7 @@ const express = require("express");
 const { isUserValid } = require("../middleware/auth.middleware");
 const { ConnectionRequest } = require("../models/connectionRequest");
 const {User}=require("../models/user")
+const mongoose = require("mongoose");
 
 const userRouter = express.Router();
 
@@ -101,49 +102,114 @@ userRouter.get( "/user/request/connections",isUserValid,async(req,res)=>{
 // APi for getting feed
 
 
-userRouter.get("/user/feed",isUserValid,async(req,res)=>{
-
-
-    // feed should not consist of user self and any other excisting connectioRequest with loggedin user
-    // pagination
-
-
+userRouter.get("/user/feed", isUserValid, async (req, res) => {
     try {
-        const loggedInUser=req.user
+        const loggedInUser = req.user;
+        const page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 20;
 
-        const page=req.query.page||1
-        let limit=req.query.limit||10
-
-        if(limit>5){
-            limit=5
+        if (limit > 20) {
+            limit = 20; // Enforce max limit
         }
 
+        const skip = (page - 1) * limit;
 
-        const skip=(page-1)*limit
+        // 1. Determine users to hide (self + those with existing connection requests)
+        const connectionRequests = await ConnectionRequest.find({
+            $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }]
+        }).select('fromUserId toUserId -_id');
 
-        const connectionRequests=await ConnectionRequest.find({
-            $or:[{fromUserId:loggedInUser._id},{toUserId:loggedInUser._id}]
-        })
-        const hiddenUser=new Set()
+        const hiddenUserIds = new Set();
+        hiddenUserIds.add(loggedInUser._id.toString()); // Always hide self
 
         connectionRequests.forEach(cr => {
-            hiddenUser.add(cr.toUserId)
-            hiddenUser.add(cr.fromUserId)
+            // Note: Ensure these are converted to strings if they are Mongoose ObjectIds
+            hiddenUserIds.add(cr.toUserId.toString());
+            hiddenUserIds.add(cr.fromUserId.toString());
+        });
+        
+        // Convert Set of String IDs to Array of Mongoose ObjectIds for $nin
+        const hiddenObjectIds = Array.from(hiddenUserIds).map(id => new mongoose.Types.ObjectId(id));
+
+        // 2. Aggregation Pipeline to Fetch Users, Paginate, and Calculate Match Count
+        const feedUserData = await User.aggregate([
+            {
+                // Stage 1: Filter out excluded users (self and existing connections)
+                $match: {
+                    _id: { $nin: hiddenObjectIds }
+                }
+            },
+            {
+                // Stage 2: Pagination
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                // Stage 3: Lookup ConnectionRequests to find accepted matches for the current user
+                $lookup: {
+                    from: "connectionrequests", // **Ensure this matches your actual collection name (e.g., 'connectionrequests')**
+                    let: { userId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        // Filter for accepted connections
+                                        { $eq: ["$status", "accepted"] },
+                                        {
+                                            $or: [
+                                                // Check if the current user is either fromUserId or toUserId
+                                                { $eq: ["$fromUserId", "$$userId"] },
+                                                { $eq: ["$toUserId", "$$userId"] }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        // Count the total number of accepted connections found
+                        { $count: "matchCount" } 
+                    ],
+                    as: "matchData" // The result of the pipeline (an array)
+                }
+            },
+            {
+                // Stage 4: Reshape the output documents
+                $project: {
+                    // Include all fields from the original user document that are covered by safe_User_Data
+                    // NOTE: You must explicitly list all fields you need from safe_User_Data here:
+                    _id: 1, 
+                    firstName: 1, 
+                    lastName: 1, 
+                
+                    age: 1,
+                    profilePic: 1,
+                    designation: 1,
+                    about: 1,
+                    role: 1,
+                    gender:1,
+                    
+                    // ... list other fields from safe_User_Data (e.g., profilePic, role, etc.)
+
+                    // Extract the matchCount, defaulting to 0 if the lookup array is empty
+                    matchCount: { 
+                        $ifNull: [{ $arrayElemAt: ["$matchData.matchCount", 0] }, 0]
+                    }
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            message: "data fetched successfully",
+            data: feedUserData
         });
 
-        const feedUserData=await User.find({_id:{$nin:Array.from(hiddenUser)}}).select(safe_User_Data).skip(skip).limit(limit)
-
-     res.status(200).json({
-        message:"data fetched successfuly",
-        data:feedUserData
-     })
-
-
     } catch (error) {
-
-        res.status(401).json({message:error.message})   
+        // You might need to import mongoose for the error message to be cleaner if the aggregation fails
+        res.status(401).json({ message: error.message });
     }
-})
-
+});
 
 module.exports = {userRouter}

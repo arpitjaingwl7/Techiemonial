@@ -2,7 +2,8 @@
 const express = require("express");
 const { isUserValid } = require("../middleware/auth.middleware");
 const { profileUpdateValidator } = require("../utils/userValidator");
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const { User } = require("../models/user");
 
 const profileRouter  = express.Router()
 
@@ -17,7 +18,9 @@ profileRouter.get("/profile/view",isUserValid,async(req,res)=>{
             throw new Error("please login first 1")
         }
 
-        res.status(201).send(user);
+        const newUser=await User.findById(user._id).select("-password  -createdAt -updatedAt")
+
+        res.status(200).json({data: newUser, message: "User fetched successfully"});
         
     } catch (error) {
         res.status(501).send("error :"+error)
