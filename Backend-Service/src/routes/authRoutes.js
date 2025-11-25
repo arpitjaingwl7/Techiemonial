@@ -15,7 +15,7 @@ authRouter.post("/user/login", async (req, res) => {
 
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email })
+       const user = await User.findOne({ email });
 
         if (!user) {
             throw new Error("please signup first")
@@ -24,15 +24,21 @@ authRouter.post("/user/login", async (req, res) => {
         const isPasswordCorrect = await bcrypt.compare(password, user.password)
 
         if (!isPasswordCorrect) {
+            // console.log("Invalid Credentials")
             throw new Error("Invalid Credentials")
         }
 
         const token = await user.getjwt();
+        // const newUser=user.Select("-password -_id");
+const newUser = await User.findOne({ email }).select("-password -__v");
+        res.status(200).cookie("token", token, { httpOnly: true }).json({message:user.firstName+" Login successfully",
+            user: newUser }
 
-        res.status(201).cookie("token", token, { httpOnly: true }).send(user.firstName+" Login successfully")
+        )
 
     } catch (error) {
-        res.status(501).send("error :" + error)
+        console.log(error)
+        return res.status(401).json({error : error.message})
     }
 
 })

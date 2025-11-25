@@ -3,7 +3,7 @@ const { isUserValid } = require("./middleware/auth.middleware");
 const dbConnect=require("./config/database.js")
 const {User}=require("./models/user.js")
 const cookieParser = require("cookie-parser");
-
+const cors=require("cors");
 const app=express();
 
 const validator=require("validator");
@@ -12,7 +12,12 @@ const { profileRouter } = require("./routes/profileRoutes.js");
 const {connectionRouter}=require("./routes/connectionRoutes.js");
 const { userRouter } = require("./routes/userRoutes.js");
 
-
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your frontend URL
+    credentials: true, // allow cookies
+  })
+);
 app.use(express.json())
 app.use(cookieParser())
 
@@ -37,6 +42,10 @@ app.use(authRouter)
 app.use(profileRouter)
 app.use(connectionRouter)
 app.use(userRouter)
+
+app.get("/test",(req,res)=>{
+    res.send("Welcome to Techniemonial Backend Service")
+})
 
 app.post("/user/getInfoByEmail",async (req,res)=>{
 
