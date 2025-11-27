@@ -1,228 +1,404 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FaUserEdit, FaEnvelope, FaCodeBranch, FaCalendarAlt, FaStar, FaEdit, FaSave, FaBolt, FaChevronRight } from 'react-icons/fa';
-import profilePic from "./assets/profile.jpg";
-// Mock user data structure
-const initialUser = {
-  name: "Vanshika",
-  email: "alex.j@techie.dev",
-  firstName: "vanshika",
-  lastName: "Barua",
-  squad: "Cyber Ninjas",
-  role: "No Roles",
-  profilePic: "https://i.pravatar.cc/150?img=5",
-  joinDate: "January 15, 2023",
-  rating: 4.8,
-};
+import React, { useState, useEffect } from "react";
+import { BASE_URL } from "../../utils/constants.js";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  User, 
+  Mail, 
+  Briefcase, 
+  Calendar, 
+  Save, 
+  X, 
+  Camera, 
+  Code,
+  Edit3,
+  Loader2,
+  Sparkles
+} from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { addUser } from "../userSlice"; 
 
-// Mock activity feed data
-const mockFeed = [
-  { id: 1, type: "match", text: "Matched with 'Squad Goals' for the weekly challenge.", time: "2 hours ago", icon: FaCodeBranch, color: "text-cyan-400" },
-  { id: 2, type: "rating", text: "Received a 5-star rating for Hackathon contribution.", time: "1 day ago", icon: FaStar, color: "text-yellow-400" },
-  { id: 3, type: "settings", text: "Updated profile details and bio.", time: "3 days ago", icon: FaUserEdit, color: "text-purple-400" },
-  { id: 4, type: "event", text: "Registered for the 'AI Integration' Hackathon.", time: "1 week ago", icon: FaCalendarAlt, color: "text-blue-400" },
-];
+// --- Aesthetic Background ---
+const AuroraBackground = ({ children }) => (
+  <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden">
+    <div className="fixed inset-0 pointer-events-none">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
+      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px]" />
+    </div>
+    <div className="relative z-10 w-full min-h-screen flex flex-col">{children}</div>
+  </div>
+);
 
 const ProfilePage = () => {
-  const [user, setUser] = useState(initialUser);
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(initialUser);
+  const dispatch = useDispatch();
+  
+  // Get user from Redux store
+  const user = useSelector((state) => state.userData.user);
 
-  const cardVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: "easeOut" } },
-  };
+  // Local state for form (Initialize with Redux data or defaults)
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    age: "",
+    gender: "",
+    designation: "",
+    photoUrl: "",
+    about: "",
+    skills: []
+  });
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [skillInput, setSkillInput] = useState("");
+
+  // Populate form when user data is available
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "", // Kept in state for display, removed before sending
+        age: user.age || "",
+        gender: user.gender || "",
+        designation: user.designation || "Developer",
+        photoUrl: user.photoUrl || "",
+        about: user.about || "",
+        skills: user.skills || []
+      });
+    }
+  }, [user]);
+
+  // Handle Input Changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    setUser({ ...user, ...formData, name: `${formData.firstName} ${formData.lastName}` });
-    setIsEditing(false);
+  // Handle Skill Add (Enter key)
+  const handleSkillKeyDown = (e) => {
+    if (e.key === "Enter" && skillInput.trim()) {
+      e.preventDefault();
+      if (!formData.skills.includes(skillInput.trim())) {
+        setFormData((prev) => ({
+          ...prev,
+          skills: [...prev.skills, skillInput.trim()]
+        }));
+      }
+      setSkillInput("");
+    }
   };
 
-  // --- Input Field Component ---
-  const Field = ({ label, name, value, disabled = false, icon: Icon }) => (
-    <div className="flex flex-col space-y-1">
-      <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-        <Icon className="text-purple-400" /> {label}
-      </label>
-      <input
-        type="text"
-        name={name}
-        value={value}
-        onChange={handleChange}
-        disabled={disabled}
-        className={`w-full p-3 rounded-xl border-2 transition-all 
-          ${disabled 
-            ? 'bg-slate-700/50 border-slate-700 text-slate-400 cursor-not-allowed'
-            : 'bg-slate-900 border-cyan-500/30 text-white focus:border-cyan-500 focus:shadow-lg focus:shadow-cyan-500/10'
-          }
-          `}
-      />
-    </div>
-  );
-  // -----------------------------
+  // Handle Skill Remove
+  const removeSkill = (skillToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((skill) => skill !== skillToRemove)
+    }));
+  };
+
+  // Save Data
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMsg("");
+
+    try {
+      // Destructure email out of formData to avoid sending it to the API
+      const { email, ...dataToSend } = formData;
+
+      const res = await axios.patch(
+        BASE_URL+"/profile/edit", 
+        dataToSend, // Sending only the allowed fields
+        { withCredentials: true }
+      );
+      
+      // Update Redux Store with the new data
+      dispatch(addUser(res.data.data)); 
+      
+      setMsg("Profile updated successfully!");
+      setTimeout(() => setMsg(""), 3000);
+    } catch (error) {
+      console.error(error);
+      setMsg("Failed to update profile. " + (error.response?.data?.message || ""));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fallback Image Logic
+  const [imgSrc, setImgSrc] = useState(formData.photoUrl);
+  useEffect(() => { setImgSrc(formData.photoUrl); }, [formData.photoUrl]);
 
   return (
-    <div className="min-h-screen bg-slate-900 pt-32 pb-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        className="max-w-6xl mx-auto"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.2 } } }}
-      >
-        <h1 className="text-4xl font-extrabold text-white text-center mb-12">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-            {user.name}'s Dashboard
-          </span>
-        </h1>
+    <AuroraBackground>
+      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        
+        {/* Header */}
+        <div className="mb-10 text-center sm:text-left">
+          <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600">
+            Profile Settings
+          </h1>
+          <p className="text-slate-400 mt-2">Manage your public persona and coding stats.</p>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* --- Column 1: Profile and Stats --- */}
-          <motion.div variants={cardVariants} className="lg:col-span-1 space-y-8">
-            {/* Profile Card */}
-            <div className="bg-slate-800/70 backdrop-blur-md p-6 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.2)] border border-white/10 flex flex-col items-center">
-              <div className="relative p-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 mb-4">
-                <img
-                  src={profilePic}
-                  alt={user.name}
-                  className="w-28 h-28 rounded-full object-cover border-4 border-slate-800"
-                />
-              </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight">{user.name}</h2>
-              <p className="text-slate-400 text-sm mt-1">{user.role}</p>
-
-              <div className="mt-4 pt-4 border-t border-slate-700 w-full grid grid-cols-2 gap-4 text-center">
-                <div className='p-2 bg-slate-900/50 rounded-lg'>
-                    <FaStar className='text-yellow-400 mx-auto' size={18} />
-                    <p className='text-xl font-bold text-white'>{user.rating}</p>
-                    <p className='text-xs text-slate-400'>Rating</p>
-                </div>
-                <div className='p-2 bg-slate-900/50 rounded-lg'>
-                    <FaCodeBranch className='text-cyan-400 mx-auto' size={18} />
-                    <p className='text-xl font-bold text-white'>{user.squad}</p>
-                    <p className='text-xs text-slate-400'>Squad</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Profile Feed Card (Activity Feed) */}
-            <div className="bg-slate-800/70 backdrop-blur-md p-6 rounded-3xl shadow-[0_0_40px_rgba(59,130,246,0.1)] border border-white/10">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <FaBolt className='text-yellow-400' /> Live Activity Feed
-              </h3>
-              <ul className="space-y-3">
-                {mockFeed.map((item) => (
-                  <motion.li 
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/50 hover:bg-slate-900 transition-colors"
-                  >
-                    <item.icon className={`mt-1 ${item.color}`} size={16} />
-                    <div className="flex-grow">
-                      <p className="text-sm text-white">{item.text}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{item.time}</p>
+          {/* LEFT COLUMN: Profile Preview Card */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-1"
+          >
+            <div className="sticky top-24">
+                <div className="relative bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden text-center">
+                    <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-cyan-900/40 to-purple-900/40 z-0" />
+                    
+                    {/* Avatar */}
+                    <div className="relative z-10 w-32 h-32 mx-auto mt-8 rounded-full p-1 bg-gradient-to-tr from-cyan-400 to-purple-500 shadow-lg shadow-purple-500/30">
+                        <img 
+                            src={imgSrc || "https://geographyandyou.com/images/user-profile.png"} 
+                            onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${formData.firstName}`; }}
+                            alt="Profile" 
+                            className="w-full h-full rounded-full object-cover bg-slate-800"
+                        />
+                        <div className="absolute bottom-0 right-0 p-2 bg-slate-800 rounded-full border border-slate-700 text-cyan-400 cursor-pointer hover:bg-slate-700 transition-colors">
+                            <Camera size={16} />
+                        </div>
                     </div>
-                    <FaChevronRight className='text-slate-600 self-center' size={12} />
-                  </motion.li>
-                ))}
-              </ul>
+
+                    <h2 className="relative z-10 mt-4 text-2xl font-bold text-white capitalize">
+                        {formData.firstName || "Your"} {formData.lastName || "Name"}
+                    </h2>
+                    <p className="relative z-10 text-cyan-400 font-medium flex items-center justify-center gap-2 mb-4">
+                        <Code size={14} /> {formData.designation || "Developer"}
+                    </p>
+
+                    <div className="relative z-10 bg-slate-800/50 rounded-xl p-4 text-left border border-white/5 mb-6">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">About Me</h4>
+                        <p className="text-slate-300 text-sm italic leading-relaxed">
+                            "{formData.about || "Write something about yourself..."}"
+                        </p>
+                    </div>
+
+                     {/* Skills Preview */}
+                    <div className="relative z-10 flex flex-wrap justify-center gap-2">
+                        {formData.skills.map((skill, i) => (
+                            <span key={i} className="px-3 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full border border-purple-500/30">
+                                {skill}
+                            </span>
+                        ))}
+                    </div>
+                </div>
             </div>
           </motion.div>
 
-          {/* --- Column 2 & 3: Editing Fields --- */}
+          {/* RIGHT COLUMN: Edit Form */}
           <motion.div 
-            variants={cardVariants}
-            className="lg:col-span-2 bg-slate-800/70 backdrop-blur-md p-8 rounded-3xl shadow-[0_0_40px_rgba(139,92,246,0.2)] border border-white/10"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-2"
           >
-            <h3 className="text-2xl font-bold text-white mb-6 border-b border-slate-700 pb-3 flex items-center justify-between">
-              Profile Settings
-              <motion.button
-                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-colors 
-                  ${isEditing 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:to-green-500 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-              >
-                {isEditing ? <FaSave /> : <FaEdit />}
-                {isEditing ? 'Save Changes' : 'Edit Details'}
-              </motion.button>
-            </h3>
+            <form onSubmit={handleSave} className="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-xl">
+                <div className="flex items-center gap-2 mb-8 pb-4 border-b border-white/10">
+                    <Edit3 className="text-cyan-400" />
+                    <h3 className="text-xl font-bold text-white">Edit Details</h3>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Editable Fields */}
-              <Field 
-                label="First Name" 
-                name="firstName" 
-                value={formData.firstName} 
-                icon={FaUserEdit} 
-                disabled={!isEditing} 
-              />
-              <Field 
-                label="Last Name" 
-                name="lastName" 
-                value={formData.lastName} 
-                icon={FaUserEdit} 
-                disabled={!isEditing} 
-              />
-              <Field 
-                label="Email Address (Disabled)" 
-                name="email" 
-                value={formData.email} 
-                icon={FaEnvelope} 
-                disabled={true} 
-              />
-              <Field 
-                label="Role/Title" 
-                name="role" 
-                value={formData.role} 
-                icon={FaCodeBranch} 
-                disabled={!isEditing} 
-              />
-              
-              {/* Read-Only Fields */}
-              <Field 
-                label="Squad Name (Read-Only)" 
-                name="squad" 
-                value={user.squad} 
-                icon={FaCodeBranch} 
-                disabled={true} 
-              />
-              <Field 
-                label="Member Since (Read-Only)" 
-                name="joinDate" 
-                value={user.joinDate} 
-                icon={FaCalendarAlt} 
-                disabled={true} 
-              />
-            </div>
-            
-            <div className='mt-8 pt-8 border-t border-slate-700'>
-                <h4 className='text-xl font-semibold text-white mb-4'>Bio/About Me</h4>
-                <textarea
-                    rows="4"
-                    disabled={!isEditing}
-                    defaultValue="Dedicated full-stack engineer, specializing in React and distributed systems. Always ready for the next hackathon!"
-                    className={`w-full p-4 rounded-xl border-2 transition-all resize-none 
-                        ${isEditing 
-                            ? 'bg-slate-900 border-cyan-500/30 text-white focus:border-cyan-500'
-                            : 'bg-slate-700/50 border-slate-700 text-slate-400 cursor-not-allowed'
-                        }`}
-                />
-            </div>
+                {/* Name Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400 ml-1">First Name</label>
+                        <div className="relative">
+                            <User className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                            <input 
+                                type="text"
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                                placeholder="John"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Last Name</label>
+                        <div className="relative">
+                            <User className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                            <input 
+                                type="text"
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                                placeholder="Doe"
+                            />
+                        </div>
+                    </div>
+                </div>
 
+                {/* Email & Designation */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-2 opacity-70">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Email ID (Read Only)</label>
+                        <div className="relative">
+                            <Mail className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                            <input 
+                                type="text"
+                                value={formData.email}
+                                disabled
+                                className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-slate-400 cursor-not-allowed"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Designation</label>
+                        <div className="relative">
+                            <Briefcase className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                            <input 
+                                type="text"
+                                name="designation"
+                                value={formData.designation}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                                placeholder="Full Stack Developer"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Age & Gender */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Age</label>
+                        <div className="relative">
+                            <Calendar className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                            <input 
+                                type="number"
+                                name="age"
+                                min="18"
+                                max="100"
+                                value={formData.age}
+                                onChange={handleChange}
+                                className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-400 ml-1">Gender</label>
+                        <select
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-4 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all appearance-none"
+                        >
+                            <option value="" disabled>Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                {/* Photo URL */}
+                <div className="space-y-2 mb-6">
+                    <label className="text-sm font-medium text-slate-400 ml-1">Avatar URL</label>
+                    <div className="relative">
+                        <Camera className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                        <input 
+                            type="text"
+                            name="photoUrl"
+                            value={formData.photoUrl}
+                            onChange={handleChange}
+                            className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                            placeholder="https://..."
+                        />
+                    </div>
+                </div>
+
+                {/* About */}
+                <div className="space-y-2 mb-6">
+                    <label className="text-sm font-medium text-slate-400 ml-1">About</label>
+                    <textarea 
+                        name="about"
+                        rows="4"
+                        value={formData.about}
+                        onChange={handleChange}
+                        className="w-full bg-slate-950/50 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all resize-none"
+                        placeholder="Tell the world about your coding journey..."
+                    />
+                </div>
+
+                {/* Skills Input */}
+                <div className="space-y-2 mb-8">
+                    <label className="text-sm font-medium text-slate-400 ml-1">Skills (Press Enter to add)</label>
+                    <div className="relative">
+                        <Sparkles className="absolute left-4 top-3.5 text-slate-500" size={18} />
+                        <input 
+                            type="text"
+                            value={skillInput}
+                            onChange={(e) => setSkillInput(e.target.value)}
+                            onKeyDown={handleSkillKeyDown}
+                            className="w-full bg-slate-950/50 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                            placeholder="React, Node.js, Python..."
+                        />
+                    </div>
+                    {/* Skills Chips */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                        <AnimatePresence>
+                            {formData.skills.map((skill, index) => (
+                                <motion.span
+                                    key={index}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    className="px-3 py-1.5 bg-slate-800 text-cyan-400 text-sm rounded-lg border border-slate-700 flex items-center gap-2 group hover:border-red-500/50 hover:bg-red-500/10 transition-all"
+                                >
+                                    {skill}
+                                    <button 
+                                        type="button" 
+                                        onClick={() => removeSkill(skill)}
+                                        className="text-slate-500 group-hover:text-red-400"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </motion.span>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+                {/* Feedback Message */}
+                {msg && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`p-3 rounded-lg text-center mb-6 text-sm font-semibold ${msg.includes("Failed") ? "bg-red-500/20 text-red-300" : "bg-green-500/20 text-green-300"}`}
+                    >
+                        {msg}
+                    </motion.div>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-end">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        type="submit"
+                        disabled={isLoading}
+                        className="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                        {isLoading ? "Saving..." : "Save Changes"}
+                    </motion.button>
+                </div>
+
+            </form>
           </motion.div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </AuroraBackground>
   );
 };
 

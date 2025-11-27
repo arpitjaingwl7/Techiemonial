@@ -30,7 +30,7 @@ profileRouter.get("/profile/view",isUserValid,async(req,res)=>{
 
 //profile/edit
 
-profileRouter.post("/profile/edit",isUserValid, async(req,res)=>{
+profileRouter.patch("/profile/edit",isUserValid, async(req,res)=>{
     try {
         
         profileUpdateValidator(req)
@@ -47,7 +47,7 @@ profileRouter.post("/profile/edit",isUserValid, async(req,res)=>{
         })
 
     } catch (error) {
-        res.json({
+        res.status(500).json({
             message:"error : "+ error
         })
     }

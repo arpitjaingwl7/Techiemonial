@@ -83,7 +83,15 @@ authRouter.post("/user/signup", async (req, res) => {
 
         await user.save()
 
-        res.status(201).send(user);
+        const token = await user.getjwt();
+
+
+
+
+        const newUser = await User.findOne({ email }).select("-password");
+
+        res.status(201).cookie("token", token, { httpOnly: true }).json({message:user.firstName+" signup successfully",
+            user: newUser });
 
     } catch (error) {
         res.status(501).send("error :" + error)

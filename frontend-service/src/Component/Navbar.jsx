@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRocket, FaBars, FaTimes, FaSignOutAlt, FaUser } from "react-icons/fa";
 import { BiCodeAlt } from "react-icons/bi";
-import { deleteUser } from "../userSlice.jsx";
-// import { store } from "../store"; // Unused import
+// Import the new actions
+import { deleteUser } from "../userSlice.jsx"; 
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom"; // Added Link
+import { useNavigate, Link } from "react-router-dom";
+
+import { BASE_URL } from "../../utils/constants.js";
+
+import {toggleLoginPage,toggleSignupPage} from '../loginToggleSlice.jsx'
+
+
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -18,26 +24,40 @@ const Navbar = () => {
 
   const userData = useSelector((state) => state.userData.user);
 
-  // --- MOCK/REDUX USER STATE ---
+  // --- UPDATED USER STATE ---
   const user = {
     isLoggedIn: userData != undefined,
     name: userData ? userData.firstName + " " + userData.lastName : "John Doe",
-    profilePic: "https://i.pravatar.cc/150?img=5" 
+    // Use photoUrl from Redux, fallback to a generic placeholder if missing
+    profilePic: userData?.photoUrl || "https://geographyandyou.com/images/user-profile.png" 
   };
   // -------------------------
 
   const navLinks = [
-    { name: "Match", href: "/matches" }, // Updated to likely routes
+    { name: "Match", href: "/matches" },
     { name: "Requests", href: "/requests" },
     { name: "Feed", href: "/feed" },
-    { name: "Mentors", href: "/mentors" },
+    { name: "Surprize", href: "/surprize" },
   ];
+
+  // --- AUTH HANDLERS ---
+  const handleLoginClick = () => {
+    dispatch(toggleLoginPage());
+    navigate("/login");
+    setIsMobileOpen(false);
+  };
+
+  const handleSignupClick = () => {
+    dispatch(toggleSignupPage());
+    navigate("/login");
+    setIsMobileOpen(false);
+  };
 
   const handleLogout = async() => {
     try {
       dispatch(deleteUser());
       setIsProfileMenuOpen(false);
-      await axios.post("http://localhost:7777/user/logout", {}, { withCredentials: true });
+      await axios.post(BASE_URL+"/user/logout", {}, { withCredentials: true });
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -55,6 +75,7 @@ const Navbar = () => {
         <img
           src={user.profilePic}
           alt={user.name}
+          onError={(e) => { e.target.src = "https://geographyandyou.com/images/user-profile.png" }} // Fallback on error
           className="w-8 h-8 rounded-full object-cover border-2 border-cyan-400"
         />
         {/* User Name */}
@@ -87,7 +108,7 @@ const Navbar = () => {
                 <span className="font-semibold text-white truncate block">{user.name}</span>
             </div>
 
-            {/* View Profile Link - CHANGED TO LINK */}
+            {/* View Profile Link */}
             <Link 
                 to="/profile" 
                 className="flex items-center gap-2 p-3 text-sm text-slate-300 hover:bg-slate-700/50 transition-colors"
@@ -115,11 +136,17 @@ const Navbar = () => {
   // Helper component for the Auth Buttons
   const AuthButtons = () => (
     <div className="flex items-center gap-4">
-      {/* CHANGED TO LINK */}
-      <Link to="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+      {/* Login Button with Dispatch */}
+      <button 
+        onClick={handleLoginClick} 
+        className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+      >
         Log In
-      </Link>
+      </button>
+      
+      {/* Join Button with Dispatch */}
       <motion.button
+        onClick={handleSignupClick}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="relative group overflow-hidden rounded-full px-6 py-2.5 bg-slate-800 text-white font-semibold text-sm shadow-lg shadow-purple-500/20"
@@ -127,10 +154,6 @@ const Navbar = () => {
         <div className="absolute inset-0 rounded-full p-[1px] bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 opacity-100" />
         <span className="absolute inset-[1px] rounded-full bg-slate-900 group-hover:bg-slate-800 transition-colors duration-200" />
         
-        {/* For "Join Now", if it links to a page, wrap the text or handle onClick. 
-            Since it's a motion button, we usually wrap the button in Link or use onClick navigate.
-            Here I'll assume it's a visual button for now, or you can wrap it in <Link to="/signup"> 
-        */}
         <span className="relative flex items-center gap-2">
           Join Now <FaRocket className="text-purple-400 group-hover:text-purple-300 transition-colors" />
         </span>
@@ -147,7 +170,7 @@ const Navbar = () => {
         transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
         className="fixed top-6 inset-x-0 max-w-5xl mx-auto z-50 hidden md:flex items-center justify-between px-6 py-3 rounded-full border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-[0_0_30px_rgba(139,92,246,0.15)]"
       >
-        {/* Logo Area - CHANGED TO LINK */}
+        {/* Logo Area */}
         <Link to="/feed" className="flex items-center gap-2 group">
           <div className="p-2 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-lg text-white shadow-lg group-hover:shadow-cyan-500/50 transition-all duration-300">
             <BiCodeAlt size={20} />
@@ -160,7 +183,6 @@ const Navbar = () => {
         {/* Center Links with Sliding Pill Animation */}
         <div className="flex items-center gap-2">
           {user.isLoggedIn && navLinks.map((link, index) => (
-            // CHANGED TO LINK
             <Link
               key={link.name}
               to={link.href}
@@ -198,7 +220,6 @@ const Navbar = () => {
       {/* --- Mobile Navbar (Simpler but stylized) --- */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 p-4">
         <div className="flex items-center justify-between bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
-          {/* CHANGED TO LINK */}
           <Link to="/" className="flex items-center gap-2">
             <div className="p-1.5 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-md text-white">
               <BiCodeAlt size={18} />
@@ -225,7 +246,7 @@ const Navbar = () => {
               transition={{ duration: 0.2 }}
               className="absolute top-20 left-4 right-4 bg-slate-800/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-2xl flex flex-col gap-2"
             >
-              {/* Mobile Links - CHANGED TO LINK */}
+              {/* Mobile Links */}
               {user.isLoggedIn && navLinks.map((link) => (
                 <Link 
                   key={link.name} 
@@ -244,6 +265,7 @@ const Navbar = () => {
                   <div className="p-3 rounded-xl bg-slate-700/50 text-white flex items-center justify-center gap-3">
                     <img
                       src={user.profilePic}
+                      onError={(e) => { e.target.src = "https://geographyandyou.com/images/user-profile.png" }}
                       alt={user.name}
                       className="w-8 h-8 rounded-full object-cover border-2 border-cyan-400"
                     />
@@ -260,11 +282,15 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  {/* CHANGED TO LINK */}
-                  <Link to="/login" className="p-3 text-center text-slate-300 hover:text-white">Log In</Link>
-                  <Link to="/signup" className="p-3 text-center rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold shadow-lg">
+                  {/* Mobile Login with Dispatch */}
+                  <button onClick={handleLoginClick} className="p-3 text-center text-slate-300 hover:text-white">
+                    Log In
+                  </button>
+                  
+                  {/* Mobile Signup with Dispatch */}
+                  <button onClick={handleSignupClick} className="p-3 text-center rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold shadow-lg">
                     Join Squad
-                  </Link>
+                  </button>
                 </>
               )}
             </motion.div>
