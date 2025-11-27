@@ -1,239 +1,231 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    FaUserLock, 
-    FaCheckCircle, 
-    FaTimesCircle, 
-    FaCode, 
-    FaTerminal,
-    FaArrowRight,
-    FaExclamationTriangle
-} from "react-icons/fa";
-// 🚨 IMPORTANT: Ensure you have a component named 'AuroraBackground' in your './AuraBackground' file.
-import { AuroraBackground } from "./AuraBackground"; 
+import { BASE_URL } from "../../utils/constants.js";
+import {
+  Check,
+  X,
+  User,
+  Clock,
+  Code,
+  Sparkles,
+  Quote,
+  ShieldAlert
+} from "lucide-react";
+import axios from "axios";
 
-// --- 🛑 Custom CSS Styles for Terminal Aesthetic (Self-Contained) ---
-const CustomStyles = () => (
-    <style jsx="true" global="true">
-        {`
-            /* Custom Keyframes */
-            @keyframes glitch-shake {
-                0%, 100% { transform: translate(0, 0); }
-                20% { transform: translate(-2px, 2px); }
-                40% { transform: translate(2px, -2px); }
-                60% { transform: translate(-1px, 1px); }
-                80% { transform: translate(1px, -1px); }
-            }
-            @keyframes pulse-dot {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.5); opacity: 0.5; }
-            }
-
-            /* Custom Utility Classes */
-            .animate-glitch-shake {
-                animation: glitch-shake 0.5s infinite;
-            }
-            .animate-pulse-dot {
-                animation: pulse-dot 1.5s ease-in-out infinite;
-            }
-
-            /* Neon Text Shadows */
-            .shadow-neon-red { text-shadow: 0 0 5px #f00; }
-            .shadow-neon-green { text-shadow: 0 0 5px #0f0; }
-        `}
-    </style>
+// --- Aesthetic Background (Reused for consistency) ---
+const AuroraBackground = ({ children }) => (
+  <div className="relative min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden">
+    <div className="fixed inset-0 pointer-events-none">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
+      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px]" />
+    </div>
+    <div className="relative z-10 w-full min-h-screen flex flex-col">
+      {children}
+    </div>
+  </div>
 );
-// ------------------------------------------------------------------------
 
-// --- Mock Request Data ---
-const mockRequests = [
-  {
-    _id: "r1",
-    firstName: "Devon",
-    lastName: "Smith",
-    designation: "Full Stack Commander",
-    message: "Requesting access to your private repo (and your brainpower). Let's build something!",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Devon&backgroundColor=c0aede,ffdfbf",
-    riskLevel: "LOW",
-    timestamp: "5 minutes ago",
-  },
-  {
-    _id: "r2",
-    firstName: "Anya",
-    lastName: "Sharma",
-    designation: "Frontend Sorceress",
-    message: "Your CSS skills are legendary. I need to fork your design ideas. Access granted?",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Anya&backgroundColor=b6e3f4,c0aede",
-    riskLevel: "LOW",
-    timestamp: "1 hour ago",
-  },
-  {
-    _id: "r3",
-    firstName: "Liam",
-    lastName: "O'Connell",
-    designation: "Cybersecurity Analyst",
-    message: "I found a potential vulnerability in your profile's 'about' section. Let's connect and fix it.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Liam&backgroundColor=b6e3f4",
-    riskLevel: "MEDIUM",
-    timestamp: "1 day ago",
-  },
-];
+// --- Request Card Component ---
+const RequestCard = ({ request, onReview }) => {
+  // Defensive check: API might return user details inside 'fromUserId' or directly
+  const user = request.fromUserId || request; 
+  const requestId = request._id;
 
-// --- Animation Variants ---
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.2
-        },
-    },
+  const [imgSrc, setImgSrc] = useState(user.photoUrl || "");
+
+  const handleError = () => {
+    setImgSrc(`https://api.dicebear.com/7.x/initials/svg?seed=${user.firstName}&backgroundColor=000000`);
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+      className="group relative bg-slate-900/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 flex flex-col"
+    >
+      {/* Top Banner */}
+      <div className="h-20 bg-gradient-to-r from-purple-900/30 to-blue-900/30 relative">
+        <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/40 text-[10px] text-slate-400 border border-white/5 backdrop-blur-sm flex items-center gap-1">
+          <Clock size={10} /> Pending
+        </div>
+      </div>
+
+      {/* Avatar Section */}
+      <div className="relative px-6 -mt-10 mb-2">
+        <div className="w-20 h-20 rounded-full p-1 bg-slate-900 mx-auto sm:mx-0">
+          <img
+            src={imgSrc}
+            onError={handleError}
+            alt={user.firstName}
+            className="w-full h-full rounded-full bg-slate-800 object-cover"
+          />
+        </div>
+      </div>
+
+      {/* Info Section */}
+      <div className="p-6 pt-0 flex-grow flex flex-col text-center sm:text-left">
+        <h3 className="text-xl font-bold text-white capitalize">
+          {user.firstName} {user.lastName}
+        </h3>
+        <p className="text-sm font-medium text-cyan-500 mb-4 flex items-center justify-center sm:justify-start gap-1 capitalize">
+          <Code size={14} /> {user.designation || "Developer"}
+        </p>
+
+        {/* About / Bio Section */}
+        <div className="relative bg-slate-800/30 rounded-lg p-3 mb-6 border border-white/5 flex-grow text-left">
+          <Quote size={12} className="absolute top-2 left-2 text-slate-600" />
+          <p className="text-sm text-slate-300 italic pl-4 line-clamp-2">
+             {user.about || "Hey! I'd like to connect and share knowledge."}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-auto">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onReview("rejected", requestId)}
+            className="flex-1 py-2 rounded-xl bg-slate-800 border border-white/5 text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all font-semibold flex items-center justify-center gap-2"
+          >
+            <X size={16} /> Ignore
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onReview("accepted", requestId)}
+            className="flex-1 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 transition-all font-semibold flex items-center justify-center gap-2"
+          >
+            <Check size={16} /> Accept
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
 };
 
-// --- Request Item Component: The Access Log Entry ---
-const RequestEntry = ({ request, onAction }) => {
-    const isMediumRisk = request.riskLevel === "MEDIUM";
+// --- Main Requests Page Component ---
+const RequestsPage = () => {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, height: 0, padding: 0, transition: { duration: 0.3 } }}
-            whileHover={{ scale: 1.01, boxShadow: isMediumRisk ? "0 0 10px rgba(255, 165, 0, 0.5)" : "0 0 10px rgba(0, 255, 0, 0.5)" }}
-            className={`flex flex-col md:flex-row items-center p-4 bg-slate-900/80 border ${isMediumRisk ? 'border-yellow-500/40' : 'border-green-500/40'} rounded-xl shadow-lg transition duration-300 overflow-hidden mb-4`}
-        >
-            {/* User Info */}
-            <div className="flex items-center flex-grow w-full md:w-auto mb-3 md:mb-0">
-                <img
-                    src={request.avatar}
-                    alt={request.firstName}
-                    className="w-12 h-12 rounded-full flex-shrink-0 object-cover border-2 border-green-500"
-                />
-                <div className="ml-4 min-w-0 flex-grow">
-                    <h3 className={`text-lg font-bold text-white truncate ${isMediumRisk ? 'shadow-neon-red animate-glitch-shake' : 'shadow-neon-green'}`}>
-                        {request.firstName} {request.lastName}
-                    </h3>
-                    <p className="text-sm text-cyan-400 font-mono flex items-center">
-                        <FaCode className="mr-1" />
-                        {request.designation}
-                    </p>
-                </div>
-            </div>
-
-            {/* Request Message */}
-            <div className="flex-grow w-full md:w-1/2 md:mx-4">
-                <p className="text-slate-300 text-sm italic border-l-2 border-purple-400 pl-3">
-                    {request.message}
-                </p>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex space-x-3 mt-3 md:mt-0 flex-shrink-0">
-                <motion.button
-                    onClick={() => onAction(request._id, "ACCEPT")}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 bg-green-600 rounded-full text-white text-xl shadow-lg shadow-green-500/40 hover:bg-green-500"
-                >
-                    <FaCheckCircle />
-                </motion.button>
-                <motion.button
-                    onClick={() => onAction(request._id, "REJECT")}
-                    whileHover={{ scale: 1.1, rotate: -5 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 bg-red-600 rounded-full text-white text-xl shadow-lg shadow-red-500/40 hover:bg-red-500"
-                >
-                    <FaTimesCircle />
-                </motion.button>
-            </div>
-        </motion.div>
-    );
-};
-
-
-// --- Main Access Request Console Component ---
-const AccessRequestConsole = () => {
-    const [requests, setRequests] = useState(mockRequests);
-
-    const handleAction = (id, action) => {
-        console.log(`Action: ${action} on request ID ${id}`);
-        // Remove the processed request from the list
-        setRequests((prev) => prev.filter((req) => req._id !== id));
-        // In a real app, this is where you'd send an API call.
+  // Fetch Requests
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const response = await axios.get(
+          BASE_URL+"/user/request/recieved", 
+          
+          { withCredentials: true }
+        );
+        console.log("Fetched Requests:", response.data);
+        // Assuming API returns array of requests in data.data
+        setRequests(response.data.data || []);
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    return (
-        <>
-            <CustomStyles /> {/* Inject styles for terminal effects */}
-            <AuroraBackground className="flex justify-center min-h-screen pt-16 pb-10 overflow-x-hidden">
-                <div className="w-full max-w-4xl px-4 z-10">
+    fetchRequests();
+  }, []);
 
-                    {/* --- HEADER: SECURITY CONSOLE --- */}
-                    <motion.header
-                        initial={{ y: -50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center mb-10 p-6 bg-slate-900/90 backdrop-blur-md rounded-2xl border-4 border-red-500/50 shadow-neon-red"
-                    >
-                        <div className="flex items-center justify-center space-x-3 mb-2">
-                            <FaUserLock className="text-red-500 text-4xl animate-pulse-dot" />
-                            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500">
-                                ACCESS REQUEST CONSOLE
-                            </h1>
-                        </div>
-                        <p className="text-slate-300 mt-2 font-mono flex items-center justify-center">
-                            <FaArrowRight className="mr-2 text-yellow-400" />
-                            **{requests.length}** Pending Authentication Requests. Review Required.
-                        </p>
-                    </motion.header>
+  // Handle Accept/Reject Actions
+  const handleReview = async (status, requestId) => {
+    try {
+      // 1. Optimistic UI Update: Remove from list immediately
+      setRequests((prev) => prev.filter((r) => r._id !== requestId));
 
-                    {/* --- Requests List --- */}
-                    <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="space-y-4"
-                    >
-                        <AnimatePresence>
-                            {requests.length > 0 ? (
-                                requests.map((request) => (
-                                    <RequestEntry 
-                                        key={request._id} 
-                                        request={request} 
-                                        onAction={handleAction} 
-                                    />
-                                ))
-                            ) : (
-                                <motion.div
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="p-8 text-center text-slate-400 bg-slate-900/70 rounded-xl border border-green-500/50"
-                                >
-                                    <FaCheckCircle className="text-6xl text-green-500 mx-auto mb-4" />
-                                    <p className="text-xl font-mono">
-                                        QUEUE CLEAR. All connection attempts reviewed.
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
+      // 2. Make API Call
+      await axios.post(
+        `http://localhost:7777/request/review/${status}/${requestId}`,
+        {},
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error(`Error ${status} request:`, error);
+      // Optional: Re-fetch or show toast on error
+    }
+  };
 
-                    {/* --- Footer Security Log --- */}
-                    <motion.div
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.8, duration: 0.5 }}
-                        className="mt-12 p-3 bg-slate-900/80 border border-red-500/50 rounded-lg text-center font-mono text-red-400 text-xs shadow-lg"
-                    >
-                        <FaExclamationTriangle className="inline mr-2 animate-glitch-shake" />
-                        WARNING: Authorization decisions are final. Proceed with caution.
-                    </motion.div>
+  return (
+    <AuroraBackground>
+      {/* Header Section */}
+      <div className="pt-24 pb-8 px-4 sm:px-8 max-w-7xl mx-auto w-full">
+        <div className="mb-10 text-center sm:text-left">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 mb-2"
+          >
+            Incoming Signals
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="text-slate-400 text-lg"
+          >
+            Reviewing <span className="text-cyan-400 font-bold">{requests.length}</span> pending connection protocols.
+          </motion.p>
+        </div>
 
+        {/* Content Grid */}
+        {loading ? (
+            <div className="flex justify-center items-center h-64 text-slate-500">
+                <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                >
+                    <Sparkles size={40} className="text-cyan-500" />
+                </motion.div>
+                <span className="ml-3">Decrypting requests...</span>
+            </div>
+        ) : (
+            <AnimatePresence mode="popLayout">
+            {requests.length > 0 ? (
+                <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    visible: { transition: { staggerChildren: 0.05 } },
+                }}
+                >
+                {requests.map((request) => (
+                    <RequestCard 
+                        key={request._id} 
+                        request={request} 
+                        onReview={handleReview} 
+                    />
+                ))}
+                </motion.div>
+            ) : (
+                <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center py-24 text-slate-500 border border-dashed border-slate-800 rounded-3xl bg-slate-900/30"
+                >
+                <div className="p-4 bg-slate-800/50 rounded-full mb-4">
+                    <ShieldAlert size={40} className="text-slate-400" />
                 </div>
-            </AuroraBackground>
-        </>
-    );
+                <h3 className="text-xl font-bold text-white mb-2">Inbox Zero</h3>
+                <p className="max-w-md text-center">
+                    No pending requests. Your connection frequencies are clear. 
+                    Head over to the feed to broadcast your profile.
+                </p>
+                </motion.div>
+            )}
+            </AnimatePresence>
+        )}
+      </div>
+    </AuroraBackground>
+  );
 };
 
-export default AccessRequestConsole;
+export default RequestsPage;

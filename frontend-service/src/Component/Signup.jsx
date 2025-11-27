@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { FaRocket } from "react-icons/fa";
 import { BiCodeCurly, BiBot, BiPalette, BiServer, BiLockAlt, BiUser } from "react-icons/bi";
 import { AuroraBackground } from "./AuraBackground"; 
+import { BASE_URL } from "../../utils/constants.js";
 
 // --- 3D Tilt Logic ---
 const TiltCard = ({ children, className }) => {

@@ -23,7 +23,7 @@ const userValidator = (req) => {
 
 const profileUpdateValidator = (req) => {
 
-    const isEditAllowed = ["firstName", "LastName", "age", "designation", "gender", "photoUrl", "about", "skills"]
+    const isEditAllowed = ["firstName", "lastName", "age", "designation", "gender", "photoUrl", "about", "skills"]
     
     Object.keys(req.body).forEach((key)=>{
         console.log("error is thorwn for key")

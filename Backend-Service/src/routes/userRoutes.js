@@ -185,7 +185,7 @@ userRouter.get("/user/feed", isUserValid, async (req, res) => {
                     lastName: 1, 
                 
                     age: 1,
-                    profilePic: 1,
+                    photoUrl: 1,
                     designation: 1,
                     about: 1,
                     role: 1,

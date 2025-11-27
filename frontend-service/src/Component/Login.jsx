@@ -1,27 +1,27 @@
-import React, { useState } from "react";
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from "framer-motion";
 import { FaGoogle, FaGithub, FaTwitter } from "react-icons/fa";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../userSlice.jsx";
-import { AuroraBackground } from "./AuraBackground"; // make sure file exists
+import { AuroraBackground } from "./AuraBackground"; 
 import axios from "axios";
-// import { Navigate } from "react-router";
-// import { useNavigate } from "react-router-dom";
 import { useNavigate } from "react-router";
+import { BASE_URL } from "../../utils/constants.js";
+import { store } from "../store.jsx";
 
-
-// import { set } from "mongoose";
-// ----------------- 3D TILT CARD -----------------
+// ----------------- 3D TILT CARD (STABILIZED) -----------------
 const TiltCard = ({ children, className }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseX = useSpring(x, { stiffness: 150, damping: 15 });
-  const mouseY = useSpring(y, { stiffness: 150, damping: 15 });
+  // CHANGED: Increased damping (15 -> 30) for smoother, stable movement
+  const mouseX = useSpring(x, { stiffness: 150, damping: 30 });
+  const mouseY = useSpring(y, { stiffness: 150, damping: 30 });
 
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [15, -15]);
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-15, 15]);
+  // CHANGED: Reduced rotation range (15 -> 5 degrees) so input is easy
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [5, -5]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-5, 5]);
 
   function handleMouseMove({ currentTarget, clientX, clientY }) {
     const { left, top, width, height } = currentTarget.getBoundingClientRect();
@@ -52,40 +52,63 @@ const TiltCard = ({ children, className }) => {
   );
 };
 
-// ----------------- MAIN LOGIN PAGE -----------------
+// ----------------- MAIN LOGIN/SIGNUP PAGE -----------------
 const LoginPage = () => {
-  const navigate =useNavigate();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const toggleLoginPage = useSelector((store) => store.loginToggle.isLoginPage);
 
-    const [email,setEmail]=useState("b@gmail.com");
-    const [password,setPassword]=useState("aA@1234567");
+  // Mode Toggle
+  const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    setIsLogin(toggleLoginPage);
+  }, [toggleLoginPage]);
+
+  // Form State
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("b@gmail.com");
+  const [password, setPassword] = useState("aA@1234567");
+  
+  // UI State
   const [showPassword, setShowPassword] = useState(false);
-  const[error,setError]=useState(false);
-  const[errorMessage,setErrorMessage]=useState("");
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const  loginHandle = async(e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    
+    setError(false);
+    setErrorMessage("");
 
-   try {
-    const response=await axios.post("http://localhost:7777/user/login", {
-       email: email,
-       password : password
-     },{
-   withCredentials: true
- });
-     // console.log("hii");
-     dispatch(addUser(response.data.user));
-     
-     navigate("/feed");
-   } catch (error) {
+    try {
+      let response;
+      
+      if (isLogin) {
+        // --- LOGIN LOGIC ---
+        response = await axios.post(
+          `${BASE_URL}/user/login`,
+          { email, password },
+          { withCredentials: true }
+        );
+      } else {
+        // --- SIGNUP LOGIC ---
+        response = await axios.post(
+          `${BASE_URL}/user/signup`,
+          { firstName, lastName, email, password },
+          { withCredentials: true }
+        );
+      }
 
-    // console.log("error",error.response.data.error);
-    setErrorMessage(error.response.data.error);
-    setError(true);
-   }
-}
-  ;
+      dispatch(addUser(response.data.user));
+      navigate("/feed");
+
+    } catch (err) {
+      console.error("Auth Error:", err);
+      setErrorMessage(err.response?.data?.error || "Something went wrong. Please try again.");
+      setError(true);
+    }
+  };
 
   const avatars = [
     "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
@@ -100,10 +123,8 @@ const LoginPage = () => {
       {/* Main Layout */}
       <div className="relative z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 items-center p-6">
 
-        {/* LEFT SIDE */}
+        {/* LEFT SIDE (Hero) */}
         <div className="hidden lg:flex flex-col items-center lg:items-start space-y-8">
-
-          {/* Floating Illustration */}
           <motion.div
             animate={{ y: [0, -20, 0], rotate: [0, 5, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -114,8 +135,6 @@ const LoginPage = () => {
               alt="3D Robot"
               className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(59,130,246,0.5)]"
             />
-
-            {/* Orbit Circle */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -123,7 +142,6 @@ const LoginPage = () => {
             />
           </motion.div>
 
-          {/* Text */}
           <div className="text-center lg:text-left">
             <h1 className="text-5xl font-extrabold text-white leading-tight">
               Code.<br />
@@ -131,12 +149,10 @@ const LoginPage = () => {
                 Connect. Create.
               </span>
             </h1>
-
             <p className="text-slate-400 mt-4 text-lg max-w-md">
               Join the multiverse of developers. Find your next co-founder or hackathon partner.
             </p>
 
-            {/* Avatars */}
             <div className="mt-8 flex items-center gap-4">
               <div className="flex -space-x-4">
                 {avatars.map((src, i) => (
@@ -158,10 +174,10 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE LOGIN CARD */}
+        {/* RIGHT SIDE (Auth Card) */}
         <div className="flex justify-center [perspective:1000px]">
           <TiltCard className="w-full max-w-md">
-            <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden transition-all duration-300">
 
               {/* Glow Effects */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
@@ -170,10 +186,57 @@ const LoginPage = () => {
 
               <div className="relative z-10" style={{ transform: "translateZ(30px)" }}>
 
-                <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-                <p className="text-slate-400 text-sm mb-8">Enter your credentials to access the mainframe.</p>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {isLogin ? "Welcome Back" : "Join the Squad"}
+                </h2>
+                <p className="text-slate-400 text-sm mb-6">
+                  {isLogin 
+                    ? "Enter your credentials to access the mainframe." 
+                    : "Initialize your developer profile."}
+                </p>
 
-                <form className="space-y-5" onSubmit={loginHandle}>
+                <form className="space-y-4" onSubmit={handleAuth}>
+                  
+                  {/* Name Fields (Signup Only) */}
+                  <AnimatePresence>
+                    {!isLogin && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="grid grid-cols-2 gap-4 overflow-hidden"
+                      >
+                        <div>
+                          <label className="block text-xs text-cyan-400 mb-2 font-semibold uppercase tracking-wider">
+                            First Name
+                          </label>
+                          <input 
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            type="text"
+                            required={!isLogin}
+                            className="w-full bg-slate-950/50 text-white px-4 py-3 rounded-xl border border-slate-700
+                            focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none placeholder-slate-600"
+                            placeholder="John"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-cyan-400 mb-2 font-semibold uppercase tracking-wider">
+                            Last Name
+                          </label>
+                          <input 
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            type="text"
+                            required={!isLogin}
+                            className="w-full bg-slate-950/50 text-white px-4 py-3 rounded-xl border border-slate-700
+                            focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none placeholder-slate-600"
+                            placeholder="Doe"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Email */}
                   <div>
@@ -181,8 +244,8 @@ const LoginPage = () => {
                       Email Address
                     </label>
                     <input  
-                    onChange={(e) => setEmail(e.target.value)}
-                    value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      value={email}
                       type="email"
                       required
                       className="w-full bg-slate-950/50 text-white px-4 py-3 rounded-xl border border-slate-700
@@ -218,31 +281,46 @@ const LoginPage = () => {
                     </button>
                   </div>
 
-                  {error && <p className="text-red-500 text-xs">{errorMessage}</p>}
+                  {error && <p className="text-red-500 text-xs font-semibold bg-red-500/10 p-2 rounded">{errorMessage}</p>}
 
-                  {/* Forgot Password */}
-                  <div className="text-right">
-                    <a href="#" className="text-xs text-slate-400 hover:text-white">Forgot password?</a>
-                  </div>
+                  {/* Forgot Password (Login Only) */}
+                  {isLogin && (
+                    <div className="text-right">
+                      <a href="#" className="text-xs text-slate-400 hover:text-white transition-colors">Forgot password?</a>
+                    </div>
+                  )}
 
-                  {/* LOGIN BUTTON */}
+                  {/* SUBMIT BUTTON */}
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full py-4 rounded-xl font-bold text-white text-lg relative overflow-hidden group"
+                    className="w-full py-4 rounded-xl font-bold text-white text-lg relative overflow-hidden group mt-4"
                   >
                     <span className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 opacity-100" />
                     <span className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                      Log In
+                      {isLogin ? "Log In" : "Create Account"}
                     </span>
                   </motion.button>
                 </form>
 
-                {/* Divider */}
-                <div className="my-8 flex items-center gap-4">
+                {/* Toggle Login/Signup */}
+                <div className="mt-6 text-center">
+                  <p className="text-slate-400 text-sm">
+                    {isLogin ? "Don't have an account? " : "Already have an account? "}
+                    <button 
+                      onClick={() => { setIsLogin(!isLogin); setError(false); }}
+                      className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline transition-all"
+                    >
+                      {isLogin ? "Sign Up" : "Log In"}
+                    </button>
+                  </p>
+                </div>
+
+                {/* Social Divider */}
+                <div className="my-6 flex items-center gap-4">
                   <div className="flex-1 h-[1px] bg-slate-700" />
-                  <span className="text-slate-500 text-xs">OR</span>
+                  <span className="text-slate-500 text-xs uppercase tracking-widest">or continue with</span>
                   <div className="flex-1 h-[1px] bg-slate-700" />
                 </div>
 
@@ -252,7 +330,8 @@ const LoginPage = () => {
                     <motion.button
                       key={i}
                       whileHover={{ y: -5, backgroundColor: "rgba(255,255,255,0.1)" }}
-                      className="flex items-center justify-center py-3 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white"
+                      whileTap={{ scale: 0.9 }}
+                      className="flex items-center justify-center py-3 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white transition-all"
                     >
                       <Icon className="w-5 h-5" />
                     </motion.button>
