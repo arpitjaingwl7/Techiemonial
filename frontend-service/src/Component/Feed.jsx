@@ -13,6 +13,7 @@ import {
   Quote
 } from "lucide-react";
 import axios from "axios";
+import { BASE_URL } from "../../utils/constants";
 
 // --- Aesthetic Background ---
 const AuroraBackground = ({ children }) => (
@@ -139,7 +140,7 @@ const FeedPage = () => {
   const getFeed = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:7777/user/feed", { withCredentials: true });
+      const res = await axios.get(`${BASE_URL}/user/feed`, { withCredentials: true });
       setUsers(res.data.data);
     } catch (err) {
       console.error(err);
@@ -160,7 +161,7 @@ const FeedPage = () => {
     try {
       // 2. Send Request
       await axios.post(
-        `http://localhost:7777/request/send/${status}/${userId}`, 
+        `${BASE_URL}/request/send/${status}/${userId}`, 
         {}, 
         { withCredentials: true }
       );
