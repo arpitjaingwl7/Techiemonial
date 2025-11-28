@@ -2,8 +2,8 @@ import { BrowserRouter, Route, Routes } from "react-router";
 import Footer from "./Component/Footer";
 import Navbar from "./Component/Navbar";
 import TechieFeed from "./Component/Feed";
-import LoginPage from "./Component/login";
-import Signup from "./Component/signup";
+import LoginPage from "./Component/Login";
+import Signup from "./Component/Signup";
 import MatchPage from "./Component/MatchPage";
 import Body from "./body";
 import { Provider } from 'react-redux'
