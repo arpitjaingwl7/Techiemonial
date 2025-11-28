@@ -143,7 +143,7 @@ const RequestsPage = () => {
 
       // 2. Make API Call
       await axios.post(
-        `http://localhost:7777/request/review/${status}/${requestId}`,
+        `${BASE_URL}/request/review/${status}/${requestId}`,
         {},
         { withCredentials: true }
       );
