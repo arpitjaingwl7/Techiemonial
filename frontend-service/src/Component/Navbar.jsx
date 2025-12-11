@@ -12,8 +12,6 @@ import { BASE_URL } from "../../utils/constants.js";
 
 import {toggleLoginPage,toggleSignupPage} from '../loginToggleSlice.jsx'
 
-
-
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -38,6 +36,7 @@ const Navbar = () => {
     { name: "Requests", href: "/requests" },
     { name: "Feed", href: "/feed" },
     { name: "Surprize", href: "/surprize" },
+    { name: "Buy Premium", href: "/payment"}
   ];
 
   // --- AUTH HANDLERS ---
@@ -271,6 +270,17 @@ const Navbar = () => {
                     />
                     <span className="font-semibold">{user.name}</span>
                   </div>
+
+                  {/* MOBILE PROFILE SETTINGS LINK */}
+                  <Link 
+                    to="/profile" 
+                    className="p-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    <FaUser className="text-cyan-400" />
+                    Profile Settings
+                  </Link>
+
                   {/* MOBILE LOGOUT BUTTON */}
                   <button 
                     onClick={handleLogout}

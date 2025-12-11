@@ -361,3 +361,25 @@ skip = (page-1)*limit  => this is a formula for skipping the pages
 
 Validate the limits and 
 Limit = limit>50?50:limit
+
+
+
+
+
+
+
+11 DEC 2025
+
+
+//Steps to start with razorpay
+
+Signup up on razorpay complete kyc 
+Create a UI for payment page
+Creating an api for creating an order in backend 
+Add it my key in environment
+Initialize razorpay in utils
+Creating order in razorPay
+Create a schema and model
+Save the order in payment collection
+Make the api dynamic 
+Setup razorpay webhook on your live api

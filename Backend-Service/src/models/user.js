@@ -62,6 +62,18 @@ const userSchema = mongoose.Schema({
         type:String,
         default:"this is default msg"
     }
+    ,
+    isPremium:{
+        type:Boolean,
+        default:false
+    }
+    ,
+    premiumType:{
+
+        type:String,
+
+    },
+
 
 },{timestamps:true})
 

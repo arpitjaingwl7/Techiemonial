@@ -94,7 +94,7 @@ authRouter.post("/user/signup", async (req, res) => {
             user: newUser });
 
     } catch (error) {
-        res.status(501).send("error :" + error)
+        res.status(501).json({"error" : error.message})
     }
 
 })
