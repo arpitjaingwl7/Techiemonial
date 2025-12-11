@@ -11,6 +11,7 @@ const { authRouter } = require("./routes/authRoutes.js");
 const { profileRouter } = require("./routes/profileRoutes.js");
 const {connectionRouter}=require("./routes/connectionRoutes.js");
 const { userRouter } = require("./routes/userRoutes.js");
+const paymentRouter = require("./routes/paymentRoutes.js");
 
 app.use(
   cors({
@@ -42,7 +43,7 @@ app.use(authRouter)
 app.use(profileRouter)
 app.use(connectionRouter)
 app.use(userRouter)
-
+app.use(paymentRouter)
 app.get("/test",(req,res)=>{
     res.send("Welcome to Techniemonial Backend Service")
 })

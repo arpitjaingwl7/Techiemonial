@@ -68,8 +68,8 @@ const LoginPage = () => {
   // Form State
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("b@gmail.com");
-  const [password, setPassword] = useState("aA@1234567");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   
   // UI State
   const [showPassword, setShowPassword] = useState(false);
@@ -105,6 +105,7 @@ const LoginPage = () => {
 
     } catch (err) {
       console.error("Auth Error:", err);
+
       setErrorMessage(err.response?.data?.error || "Something went wrong. Please try again.");
       setError(true);
     }
@@ -318,14 +319,14 @@ const LoginPage = () => {
                 </div>
 
                 {/* Social Divider */}
-                <div className="my-6 flex items-center gap-4">
+                {/* <div className="my-6 flex items-center gap-4">
                   <div className="flex-1 h-[1px] bg-slate-700" />
                   <span className="text-slate-500 text-xs uppercase tracking-widest">or continue with</span>
                   <div className="flex-1 h-[1px] bg-slate-700" />
-                </div>
+                </div> */}
 
                 {/* Social Buttons */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-3 gap-4">
                   {[FaGoogle, FaGithub, FaTwitter].map((Icon, i) => (
                     <motion.button
                       key={i}
@@ -336,7 +337,7 @@ const LoginPage = () => {
                       <Icon className="w-5 h-5" />
                     </motion.button>
                   ))}
-                </div>
+                </div> */}
 
               </div>
             </div>
