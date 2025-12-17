@@ -5,7 +5,7 @@ import TechieFeed from "./Component/Feed";
 import LoginPage from "./Component/Login";
 // import Signup from "./Component/Signup";
 import MatchPage from "./Component/MatchPage";
-import Body from "./body";
+import Body from "./Body";
 import { Provider } from 'react-redux'
 import { store } from './store.jsx'
 import RequestPage from "./Component/RequestPage.jsx";

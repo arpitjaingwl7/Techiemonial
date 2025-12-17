@@ -81,7 +81,7 @@ paymentRouter.post("/payment/webhook",async(req,res)=>{
  // update the user (isPremium=true/false)
 
     const user=await User.findById({
-       _id:payment.userId 
+       _id:payment.user 
     })
 
     user.isPremium=true
