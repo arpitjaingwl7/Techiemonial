@@ -5,6 +5,12 @@ const {User}=require("./models/user.js")
 const cookieParser = require("cookie-parser");
 const cors=require("cors");
 const app=express();
+const {initializeSocket} = require("./utils/socket.js");
+// import { createServer } from "http";
+const createServer = require("http").createServer;
+
+// import { Server } from "socket.io";
+
 
 const validator=require("validator");
 const { authRouter } = require("./routes/authRoutes.js");
@@ -13,6 +19,10 @@ const {connectionRouter}=require("./routes/connectionRoutes.js");
 const { userRouter } = require("./routes/userRoutes.js");
 const paymentRouter = require("./routes/paymentRoutes.js");
 
+
+
+const httpServer = createServer(app);
+initializeSocket(httpServer);
 app.use(
   cors({
     origin: "http://localhost:5173", // your frontend URL
@@ -29,7 +39,7 @@ dbConnect().then(()=>{
 
 
 .then(()=>{
-    app.listen(7777,()=>{
+    httpServer.listen(7777,()=>{
     console.log("Server running on 7777")
 })
 })

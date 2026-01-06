@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BASE_URL } from "../../utils/constants.js";
+import { useNavigate } from "react-router";
 import {
   MessageSquare,
   User,
@@ -37,6 +38,11 @@ const MatchCard = ({ match }) => {
     setImgSrc(`https://api.dicebear.com/7.x/initials/svg?seed=${match.firstName}&backgroundColor=000000`);
   };
 
+  const Navigate=useNavigate()
+  const handleMessage=(id)=>{
+     Navigate("/chat/"+id,{state:{match:match}})
+    
+  }
   return (
     <motion.div
       variants={{
@@ -81,7 +87,10 @@ const MatchCard = ({ match }) => {
           >
             <User size={18} />
           </motion.button>
-          <motion.button
+          <motion.button 
+          onClick={()=>{
+            handleMessage(match._id)
+          }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             className="p-3 rounded-full bg-slate-800 text-purple-400 hover:bg-purple-500 hover:text-white transition-colors shadow-lg border border-white/5 flex items-center justify-center"

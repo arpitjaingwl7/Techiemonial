@@ -12,6 +12,7 @@ import RequestPage from "./Component/RequestPage.jsx";
 import ProfilePage from "./Component/Profile.jsx";
 import SurprizePage from "./Component/Surprise.jsx";
 import PaymentPage from "./Component/Payment.jsx";
+import ChatPage from "./Component/Chat.jsx";
 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/requests" element={<RequestPage/>} />
             <Route path="/surprize" element={<SurprizePage/>} />
             <Route path="/payment" element={<PaymentPage/>} />
+             <Route path="/chat/:id" element={<ChatPage/>} />
 
           </Route>
         </Routes>

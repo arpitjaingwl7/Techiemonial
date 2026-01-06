@@ -383,3 +383,22 @@ Create a schema and model
 Save the order in payment collection
 Make the api dynamic 
 Setup razorpay webhook on your live api
+
+
+
+<!-- chat system
+1)button on front end to open chat window
+2)chat page
+
+
+Backend
+server from http.createserver or isko appp pass krdiya
+
+and server ko listen krwaya
+
+and ek socket.js file banaya jisme socket io ka code likha
+
+
+
+
+ -->
