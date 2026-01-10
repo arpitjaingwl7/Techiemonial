@@ -17,6 +17,8 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { initializeSocket } from "../../utils/socket.js";
 import { useSelector } from "react-redux";
 import EmojiPicker from 'emoji-picker-react';
+import { BASE_URL } from "../../utils/constants.js";
+import axios from "axios";
 
 // --- Aesthetic Background ---
 const AuroraBackground = ({ children }) => (
@@ -32,18 +34,23 @@ const AuroraBackground = ({ children }) => (
 );
 
 const MessageBubble = ({ message }) => {
-  const isMe = message.sender === "me";
+  const user = useSelector((state) => state.userData.user);
+  let isMe = message.sender === "me";
+  isMe = (isMe || (message.senderId == user._id))
   return (
     <motion.div
       initial={{ opacity: 0, y: 15, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      className={`flex w-full ${isMe ? "justify-end" : "justify-start"} mb-4`}
+      className={`flex w-full ${(isMe) ? "justify-end" : "justify-start"} mb-4`}
     >
       <div className={`flex max-w-[85%] md:max-w-[70%] ${isMe ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
         <div className={`px-5 py-3 text-sm relative shadow-lg backdrop-blur-md ${isMe ? "bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-2xl rounded-br-none border border-cyan-500/30" : "bg-slate-800/80 text-slate-200 rounded-2xl rounded-bl-none border border-white/10"}`}>
           <p className="leading-relaxed">{message.text}</p>
           <div className={`text-[10px] mt-1 flex items-center gap-1 opacity-70 ${isMe ? "justify-end text-cyan-100" : "justify-start text-slate-400"}`}>
-            {message.time}
+            {message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            }) : message.time}
             {isMe && <span>{message.status === "read" ? <CheckCheck size={12} /> : <Check size={12} />}</span>}
           </div>
         </div>
@@ -57,7 +64,7 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.userData.user);
-  
+
   const userId = user?._id;
   const targetUserId = id;
   const targetUser = location.state?.match || { firstName: "Partner", lastName: "", photoUrl: "" };
@@ -65,7 +72,7 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([{ id: "sys-1", sender: "system", text: "Encryption Secure.", time: "09:59 AM" }]);
   const [inputText, setInputText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  
+
   const chatContainerRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const socketRef = useRef(null); // Persist socket instance
@@ -84,13 +91,13 @@ const ChatPage = () => {
       // Logic: Only add if sender is NOT you (since you add your own messages optimistically)
       if (data.userId !== userId) {
         setMessages((prev) => [
-          ...prev, 
-          { 
-            id: Date.now(), 
-            sender: "them", 
-            text: data.newMessage, 
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-            status: "read" 
+          ...prev,
+          {
+            id: Date.now(),
+            sender: "them",
+            text: data.newMessage,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: "read"
           }
         ]);
       }
@@ -106,14 +113,35 @@ const ChatPage = () => {
     };
   }, [userId, targetUserId]);
 
-  // 2. Scroll to Bottom
+
+  // 2. Fetch Chat History
+  useEffect(() => {
+    async function fetchChatHistory() {
+      try {
+        const response = await axios.get(`${BASE_URL}/chat/${targetUserId}`, { withCredentials: true });
+        const chatData = response.data?.messages;
+        if(chatData) {
+            setMessages(chatData);
+        }
+        console.log("Fetched chat data:", chatData);
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+      }
+    }
+    fetchChatHistory();
+  }, []);
+
+  // 3. Auto-Scroll to Bottom (ADDED THIS LOGIC)
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        chatContainerRef.current.scrollTo({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: "smooth"
+        });
     }
-  }, [messages]);
+  }, [messages]); // Trigger whenever messages array changes
 
-  // 3. Click Outside Emoji Picker
+  // 4. Click Outside Emoji Picker
   useEffect(() => {
     const clickOutside = (e) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) setShowEmojiPicker(false);
@@ -149,7 +177,7 @@ const ChatPage = () => {
   return (
     <AuroraBackground>
       <div className="w-full h-[calc(100vh-100px)] md:h-[85vh] max-w-5xl mt-24 mx-4 bg-slate-900/40 backdrop-blur-2xl md:border border-white/10 md:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative">
-        
+
         {/* Header */}
         <div className="px-4 md:px-6 py-3 border-b border-white/5 flex justify-between items-center bg-slate-900/60 backdrop-blur-md z-30 shrink-0">
           <div className="flex items-center gap-3 md:gap-4">
@@ -171,7 +199,7 @@ const ChatPage = () => {
         </div>
 
         {/* Chat Body */}
-        
+
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar scroll-smooth">
           <div className="flex justify-center my-4">
             <span className="px-3 py-1 rounded-full bg-slate-800/50 border border-white/5 text-[10px] text-slate-500 flex items-center gap-1 font-mono uppercase">
@@ -179,8 +207,8 @@ const ChatPage = () => {
             </span>
           </div>
           {messages.map((msg) => (
-            msg.sender === "system" ? <div key={msg.id} className="text-center text-xs text-slate-500 font-mono italic">{msg.text}</div> 
-            : <MessageBubble key={msg.id} message={msg} />
+            msg.sender === "system" ? <div key={msg.id} className="text-center text-xs text-slate-500 font-mono italic">{msg.text}</div>
+              : <MessageBubble key={msg.id} message={msg} />
           ))}
         </div>
 

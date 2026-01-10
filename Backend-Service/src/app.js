@@ -18,6 +18,7 @@ const { profileRouter } = require("./routes/profileRoutes.js");
 const {connectionRouter}=require("./routes/connectionRoutes.js");
 const { userRouter } = require("./routes/userRoutes.js");
 const paymentRouter = require("./routes/paymentRoutes.js");
+const { chatRouter } = require("./routes/chatRoutes.js");
 
 
 
@@ -54,6 +55,8 @@ app.use(profileRouter)
 app.use(connectionRouter)
 app.use(userRouter)
 app.use(paymentRouter)
+
+app.use(chatRouter)
 app.get("/test",(req,res)=>{
     res.send("Welcome to Techniemonial Backend Service")
 })
