@@ -2,6 +2,7 @@
 
 
 const { Server } = require("socket.io");
+const { Chat } = require("../models/chat.js");
 const initializeSocket = (server) => {
  
     const io=new Server(server, {
@@ -25,7 +26,40 @@ const initializeSocket = (server) => {
 
                 })
 
-                socket.on("sendMesage",({firstName,userId,targetUserId,newMessage})=>{
+                socket.on("sendMesage",async({firstName,userId,targetUserId,newMessage})=>{
+                  
+                    // save message to database
+
+
+                  try{
+
+                    let chat=await Chat.findOne({
+                        participants:{$all:[userId,targetUserId]}
+                    })
+                     if(!chat){
+
+                        chat=new Chat({
+                            participants:[userId,targetUserId],
+                            messages:[]
+                        })
+
+
+                     }
+                        chat.messages.push({
+                            firstName,
+                            senderId:userId,
+                            text:newMessage
+                        })
+                        await chat.save();
+                      
+
+                  }
+                    catch(err){     
+
+                        console.error("Error in sendMessage event:", err);
+                    }
+
+                    
                     // console.log(firstName)
                     const roomId = [userId, targetUserId].sort().join("_");
                    console.log("Message received on server:",firstName+": "+ newMessage);
