@@ -10,6 +10,8 @@ const chatRouter=express.Router();
 chatRouter.get("/chat/:targetId",isUserValid,async(req,res)=>{
 
     try {  
+
+        let a=6;
         
         const userId=req.user._id;
         const targetId=req.params.targetId;
